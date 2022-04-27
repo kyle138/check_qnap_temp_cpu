@@ -22,8 +22,7 @@
 // Constants
 define("OID_DEFAULT", "iso.3.6.1.2.1.1.1.0");
 define("OID_CPUTEMP", "iso.3.6.1.4.1.24681.1.2.5.0");
-define("SCALE", 'C'); // Which scale to measure CPU temperatures in, 'C' or 'F'.
-
+define("SCALE", 'C'); // Sets the scale to measure CPU temperatures in, 'C' or 'F'. Defaults to 'C'.
 
 // Check if all arguments are supplied
 if(count($argv) < 4)
@@ -47,13 +46,16 @@ GetSnmpObjValue($host, $community, OID_DEFAULT);
 // Get CPU temperature in C
 $cpuTemp = GetSnmpObjValue($host, $community, OID_CPUTEMP);
 echo "temp:".$cpuTemp."\r\n"; // DEBUG:
-// **********************************
-// Right now returns: STRING: "58 C/136 F"
-// Haystack out the "58 C/136 F" part, split on /, and let user choose between C or F.
-$cpuTemp = GetSnmpObjValueTemperature($cpuTemp);  // DEBUG:
-echo $cpuTemp;
 
+$cpuTemp = GetSnmpObjValueTemperature($cpuTemp);
+//*********************  We got the temp value, now need to test for warn/crit *************************
+DisplayMessage(0, $cpuTemp);    // DEBUG
+
+
+//******************
 // Funcs:
+//******************
+
 
 // Display message and exit with proper integer to trigger Nagios OK, Critical, Warning.
 function DisplayMessage($exitInt, $exitMsg) {
@@ -71,26 +73,24 @@ function GetSnmpObjValue($host, $community, $oid) {
   return $ret;
 } // GetSnmpObjValue()
 
+
 // Check if returned SNMP object value is a temperature, strip 'STRING: ' obj, select C or F based on $scale, and return value.
 function GetSnmpObjValueTemperature($SnmpObjValue) {
-  $ret = strstr($SnmpObjValue, 'STRING: ');
-  if(SCALE==='C')
-    //*************************************
-    // Make checks for C or F then return $ret 
-    DisplayMessage(0, 'Celcius');
-  elseif(SCALE==='F')
-    DisplayMessage(0, 'Farenheit');
-  else
-    DisplayMessage(0, "Unexpected value for SCALE: ".SCALE." :: SCALE must be set to 'C' for celcius or 'F' for farenheit.");
-}
+  $ret = explode("/",explode("\"",$SnmpObjValue)[1]);
 
-// Check if returned SNMP object value is an integer, strip 'INTEGER: ' from it and return value.
-function GetSnmpObjValueInteger($SnmpObjValue) {
-  $ret = strstr($SnmpObjValue, 'INTEGER: ');
-  if( $ret === false )
-    DisplayMessage(0, 'Unexpected value: '.$ret.' :: Possibly wrong OID for this device.');
-  list(,$ret) = explode(' ',$ret);
-  return $ret;
-} // GetSnmpObjValueInteger()
+  if( $ret === false)
+    DisplayMessage(0, "Unexpected value: $ret :: Possibly wrong OID for this device.");
+
+  switch(SCALE) {
+    case 'C':
+      $ret = explode(" ",$ret[0])[0];
+      return $ret;
+    case 'F':
+      $ret = explode(" ",$ret[1])[0];
+      return $ret;
+    default:
+      DisplayMessage(0, "Unexpected value for SCALE: ".SCALE." :: SCALE must be set to 'C' for celcius or 'F' for farenheit.");
+  }
+} // GetSnmpObjectValueTemperature
 
 ?>
