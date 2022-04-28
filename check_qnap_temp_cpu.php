@@ -22,40 +22,53 @@
 // Constants
 define("OID_DEFAULT", "iso.3.6.1.2.1.1.1.0");
 define("OID_CPUTEMP", "iso.3.6.1.4.1.24681.1.2.5.0");
-define("SCALE", 'C'); // Sets the scale to measure CPU temperatures in, 'C' or 'F'. Defaults to 'C'.
+define("OID_SYSTEMP", "iso.3.6.1.4.1.24681.1.2.6.0");
+define("SCALE", 'C'); // Sets the scale to measure CPU temperatures in, 'C' or 'F'. Defaults to 'C'. WARNING and CRITICAL arguments must be supplied in the same scale this is set to.
 
 // Check if all arguments are supplied
-if(count($argv) < 4)
-  DisplayMessage(0, "Incomplete statement.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY WARNING CRITICAL\r\n");
+if(count($argv) < 6)
+  DisplayMessage(0, "Incomplete statement.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
 
 //Assign supplied arguments
-list(,$host, $community, $warning, $critical,) = $argv;
+list(,$host, $community, $check, $warning, $critical,) = $argv;
+$check=strtoupper($check);
 $warning=(float)$warning;
 $critical=(float)$critical;
 
 //Check If CRITICAL less than WARNING, give usage example and exit.
 if($critical < $warning)
-  DisplayMessage(0, "The CRITICAL value cannot be lower than the WARNING value.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY WARNING CRITICAL\r\n");
+  DisplayMessage(0, "The CRITICAL value cannot be lower than the WARNING value.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
+//Check if CHECK is either 'CPU' or 'SYS'
+elseif( empty($check) || ($check!='CPU' && $check!='SYS'))
+  DisplayMessage(0, "Error, CHECK type not specified or invalid. Acceptable values are 'CPU' or 'SYS'.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
 //Check if HOST and COMMUNITY values are supplied.
 elseif( empty($host) || empty($community) )
-  DisplayMessage(0, "Error, host and/or community is empty.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY WARNING CRITICAL\r\n");
+  DisplayMessage(0, "Error, host and/or community is empty.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
 
 // Test connection, SNMP availability, and valid Community.
 GetSnmpObjValue($host, $community, OID_DEFAULT);
 
-// Get CPU temperature in C
-$cpuTemp = GetSnmpObjValue($host, $community, OID_CPUTEMP);
-echo "temp:".$cpuTemp."\r\n"; // DEBUG:
+switch($check) {
+  case 'CPU':
+    // Get CPU temperature
+    $temperature = GetSnmpObjValue($host, $community, OID_CPUTEMP);
+    break;
+  case 'SYS':
+    // Get SYS temperature
+    $temperature = GetSnmpObjValue($host, $community, OID_SYSTEMP);
+    break;
+  default:
+    // This should never happen due to the previous check, but just in case.
+    DisplayMessage(0, "Invalid CHECK value: $check. Acceptable values are 'CPU' and 'SYS'.");
+}
 
-$cpuTemp = GetSnmpObjValueTemperature($cpuTemp);
-//*********************  We got the temp value, now need to test for warn/crit *************************
-DisplayMessage(0, $cpuTemp);    // DEBUG
+// Send value, check, warn, and crit and return the status.
+RetStatus($temperature, $check, $warning, $critical);
 
 
 //******************
 // Funcs:
 //******************
-
 
 // Display message and exit with proper integer to trigger Nagios OK, Critical, Warning.
 function DisplayMessage($exitInt, $exitMsg) {
@@ -67,16 +80,17 @@ function DisplayMessage($exitInt, $exitMsg) {
 // Connect and return object value.
 // If the host doesn't respond to simple SNMP query, exit.
 function GetSnmpObjValue($host, $community, $oid) {
-  $ret = @snmpget($host, $community, $oid);
+  $ret = @snmpget($host, $community, $oid);         // STRING: "60 C/140 F"
   if( $ret === false )
     DisplayMessage(2, 'Cannot reach host: '.$host.', community: '.$community.', OID: '.$oid.'. Possibly offline, SNMP is not enabled, COMMUNITY string is invalid, or wrong OID for this device.');
-  return $ret;
+  // Strip STRING: and just return the values.
+  return explode("\"",$ret)[1];
 } // GetSnmpObjValue()
 
 
 // Check if returned SNMP object value is a temperature, strip 'STRING: ' obj, select C or F based on $scale, and return value.
 function GetSnmpObjValueTemperature($SnmpObjValue) {
-  $ret = explode("/",explode("\"",$SnmpObjValue)[1]);
+  $ret = explode("/",$SnmpObjValue);
 
   if( $ret === false)
     DisplayMessage(0, "Unexpected value: $ret :: Possibly wrong OID for this device.");
@@ -92,5 +106,17 @@ function GetSnmpObjValueTemperature($SnmpObjValue) {
       DisplayMessage(0, "Unexpected value for SCALE: ".SCALE." :: SCALE must be set to 'C' for celcius or 'F' for farenheit.");
   }
 } // GetSnmpObjectValueTemperature
+
+// Check if value is Ok, Warn, or Crit
+function RetStatus($value, $check, $warning, $critical) {
+  $tempValue = GetSnmpObjValueTemperature($value);
+  if($tempValue >= $critical)
+    DisplayMessage(2, "Critical - $check Temp - $value");
+  elseif($tempValue >= $warning)
+    DisplayMessage(1, "Warning - $check Temp - $value");
+  else {
+    DisplayMessage(0, "OK - $check Temp - $value");
+  }
+} // GetSnmpObjStatus
 
 ?>
