@@ -1,5 +1,4 @@
 #!/usr/bin/php
-
 <?php
 /* check_qnap_temp_cpu.php
 * Check CPU temperature of QNAP storage devices.
