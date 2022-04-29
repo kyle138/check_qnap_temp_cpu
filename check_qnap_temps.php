@@ -1,20 +1,21 @@
 #!/usr/bin/php
 <?php
-/* check_qnap_temp_cpu.php
-* Check CPU temperature of QNAP storage devices.
+/* check_qnap_temps.php
+* Check CPU and SYS temperature of QNAP storage devices.
 *
 * v0.1
 *
 * The following OIDs are used:
 * CPU Temperature: iso.3.6.1.4.1.24681.1.2.5.0
-* Returns: 57 C/134 F
+* SYS Temperature: iso.3.6.1.4.1.24681.1.2.6.0
+* Return Example: 57 C/134 F
 *
-* USAGE: check_qnap_temp_cpu HOST COMMUNITY WARNING CRITICAL
+* USAGE: check_qnap_temps.php HOST COMMUNITY WARNING CRITICAL
 * HOST=IP or FQDN of the target QNAP device
 * COMMUNITY=SNMP community name
-* WARNING=Temperature value to trigger warning in Celcius
-* CRITICAL=Temperature value to trigger critical in Celcius
-* EXAMPLE: check_qnap_temp_cpu 192.168.1.1 public 60 70
+* WARNING=Temperature value to trigger warning
+* CRITICAL=Temperature value to trigger critical
+* EXAMPLE: check_qnap_temps.php 192.168.1.1 public CPU 80 100
 *
 */
 
@@ -110,7 +111,8 @@ function GetSnmpObjValueTemperature($SnmpObjValue) {
   }
 } // GetSnmpObjectValueTemperature
 
-// Check if value is Ok, Warn, or Crit
+
+// Check if value is Ok, Warn, or Crit, return value to Nagios and shut down.
 function RetStatus($value, $check, $warning, $critical) {
   $tempValue = GetSnmpObjValueTemperature($value);
   if($tempValue >= $critical)
@@ -120,6 +122,6 @@ function RetStatus($value, $check, $warning, $critical) {
   else {
     DisplayMessage(0, "OK - $check Temp - $value");
   }
-} // GetSnmpObjStatus
+} // RetStatus
 
 ?>
