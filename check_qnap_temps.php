@@ -1,5 +1,4 @@
 #!/usr/bin/php
-
 <?php
 /* check_qnap_temp_cpu.php
 * Check CPU temperature of QNAP storage devices.
@@ -80,11 +79,15 @@ function DisplayMessage($exitInt, $exitMsg) {
 // Connect and return object value.
 // If the host doesn't respond to simple SNMP query, exit.
 function GetSnmpObjValue($host, $community, $oid) {
-  $ret = @snmpget($host, $community, $oid);         // STRING: "60 C/140 F"
+  $ret = @snmpget($host, $community, $oid);         // Returns 'STRING: "60 C/140 F"' for CPU and SYS temps.
   if( $ret === false )
     DisplayMessage(2, 'Cannot reach host: '.$host.', community: '.$community.', OID: '.$oid.'. Possibly offline, SNMP is not enabled, COMMUNITY string is invalid, or wrong OID for this device.');
-  // Strip STRING: and just return the values.
-  return explode("\"",$ret)[1];
+
+  if( strpos($ret,"\"") )
+    // Strip STRING: and just return the values.
+    $ret = explode("\"",$ret);
+
+  return $ret[1];
 } // GetSnmpObjValue()
 
 
@@ -97,11 +100,11 @@ function GetSnmpObjValueTemperature($SnmpObjValue) {
 
   switch(SCALE) {
     case 'C':
-      $ret = explode(" ",$ret[0])[0];
-      return $ret;
+      $ret = explode(" ",$ret[0]);
+      return $ret[0];
     case 'F':
-      $ret = explode(" ",$ret[1])[0];
-      return $ret;
+      $ret = explode(" ",$ret[1]);
+      return $ret[0];
     default:
       DisplayMessage(0, "Unexpected value for SCALE: ".SCALE." :: SCALE must be set to 'C' for celcius or 'F' for farenheit.");
   }
