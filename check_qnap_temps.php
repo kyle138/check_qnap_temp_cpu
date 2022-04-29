@@ -23,6 +23,9 @@
 define("OID_DEFAULT", "iso.3.6.1.2.1.1.1.0");
 define("OID_CPUTEMP", "iso.3.6.1.4.1.24681.1.2.5.0");
 define("OID_SYSTEMP", "iso.3.6.1.4.1.24681.1.2.6.0");
+define("OID_HDDSLOTS", "iso.3.6.1.4.1.24681.1.2.10.0");
+define("OID_HDDMODELS", "iso.3.6.1.4.1.24681.1.2.11.1.5");
+define("OID_HDDTEMPS", "iso.3.6.1.4.1.24681.1.2.11.1.3");
 define("SCALE", 'C'); // Sets the scale to measure CPU temperatures in, 'C' or 'F'. Defaults to 'C'. WARNING and CRITICAL arguments must be supplied in the same scale this is set to.
 
 // Check if all arguments are supplied
@@ -39,8 +42,11 @@ $critical=(float)$critical;
 if($critical < $warning)
   DisplayMessage(0, "The CRITICAL value cannot be lower than the WARNING value.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
 //Check if CHECK is either 'CPU' or 'SYS'
-elseif( empty($check) || ($check!='CPU' && $check!='SYS'))
-  DisplayMessage(0, "Error, CHECK type not specified or invalid. Acceptable values are 'CPU' or 'SYS'.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
+elseif( empty($check) )
+  DisplayMessage(0, "Error, CHECK type not specified. Acceptable values are CPU, SYS, HDDS, or HDD#.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
+//Check if CHECK is either 'CPU' or 'SYS'
+elseif( $check!='CPU' && $check!='SYS' && $check!='HDDS' && !preg_match("/^HDD\d+$/",$check))
+  DisplayMessage(0, "Error, CHECK type invalid. Acceptable values are CPU, SYS, HDDS, or HDD#.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
 //Check if HOST and COMMUNITY values are supplied.
 elseif( empty($host) || empty($community) )
   DisplayMessage(0, "Error, host and/or community is empty.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
@@ -56,6 +62,15 @@ switch($check) {
   case 'SYS':
     // Get SYS temperature
     $temperature = GetSnmpObjValue($host, $community, OID_SYSTEMP);
+    break;
+  case 'HDDS':
+    // Get temperatures of all HDDs by setting DriveNum to 0
+    $temperature = CheckHDD($host, $community, 0, OID_HDDTEMPS);
+    break;
+  case preg_match("/^HDD\d+$/",$check):
+    // Get temperature of specified HDD by DriveNum
+    $drivenum = explode("HDD",$check);
+    $temperature = CheckHDD($host, $community, $drivenum[1], OID_HDDTEMPS);
     break;
   default:
     // This should never happen due to the previous check, but just in case.
@@ -79,6 +94,7 @@ function DisplayMessage($exitInt, $exitMsg) {
 
 // Connect and return object value.
 // If the host doesn't respond to simple SNMP query, exit.
+// If value begins with STRING: " strip that off and return temperature values.
 function GetSnmpObjValue($host, $community, $oid) {
   $ret = @snmpget($host, $community, $oid);         // Returns 'STRING: "60 C/140 F"' for CPU and SYS temps.
   if( $ret === false )
@@ -92,7 +108,7 @@ function GetSnmpObjValue($host, $community, $oid) {
 } // GetSnmpObjValue()
 
 
-// Check if returned SNMP object value is a temperature, strip 'STRING: ' obj, select C or F based on $scale, and return value.
+// Check if returned SNMP object value is a temperature, obj, select C or F based on $scale, and return value.
 function GetSnmpObjValueTemperature($SnmpObjValue) {
   $ret = explode("/",$SnmpObjValue);
 
@@ -110,6 +126,28 @@ function GetSnmpObjValueTemperature($SnmpObjValue) {
       DisplayMessage(0, "Unexpected value for SCALE: ".SCALE." :: SCALE must be set to 'C' for celcius or 'F' for farenheit.");
   }
 } // GetSnmpObjectValueTemperature
+
+
+// CheckHDD($host, $community, 0, OID_HDDSLOTS, OID_HDDTEMPS);
+// Check all HDD temperatures or just a single HDD temperature
+function CheckHDD($host, $community, $drivenum, $oid) {
+  // If drivenum is supplied check the temperature of the drive specified.
+  if($drivenum > 0) {
+    // Check if drivenum is valid
+    $slots = GetSnmpObjValue($host, $community, OID_HDDSLOTS);
+    if($drivenum > $slots)
+      DisplayMessage(0, "Invavlid drive specified. Drive Number ($drivenum) cannot be higher than $slots.");
+    // Check if drive specified is installed
+    $driveoid = OID_HDDMODELS.".$drivenum";
+    $model = GetSnmpObjValue($host, $community, $driveoid);
+    if($model === "--")
+      DisplayMessage(0, "Invalid drive specified. The HDD slot $drivenum is not populated.");
+
+    $driveoid = OID_HDDTEMPS.".$drivenum";
+    $ret = GetSnmpObjValue($host, $community, $driveoid);
+
+  }
+} // CheckHDD
 
 
 // Check if value is Ok, Warn, or Crit, return value to Nagios and shut down.
