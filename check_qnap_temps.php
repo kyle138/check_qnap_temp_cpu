@@ -118,7 +118,7 @@ function RetStatus($value, $check, $warning, $critical) {
   elseif($tempValue >= $warning)
     DisplayMessage(1, "Warning - $check Temp - $value");
   else {
-    DisplayMessage(0, "OK - $check Temp - $value");
+    DisplayMessage(0, "OK - $check Temp - $value | Temperature=$value$scale;$warning;$critical;0;140");
   }
 } // GetSnmpObjStatus
 
