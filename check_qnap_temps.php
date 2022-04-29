@@ -57,7 +57,7 @@ $critical=(float)$critical;
 //Check If CRITICAL less than WARNING, give usage example and exit.
 if($critical < $warning)
   DisplayMessage(0, "The CRITICAL value cannot be lower than the WARNING value.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
-//Check if CHECK is either 'CPU' or 'SYS'
+//Check if CHECK is empty
 elseif( empty($check) )
   DisplayMessage(0, "Error, CHECK type not specified. Acceptable values are CPU, SYS, HDDS, or HDD#.\r\nUSAGE: check_qnap_temp_cpu HOST COMMUNITY CHECK WARNING CRITICAL\r\n");
 //Check if CHECK is either 'CPU' or 'SYS'
@@ -70,6 +70,7 @@ elseif( empty($host) || empty($community) )
 // Test connection, SNMP availability, and valid Community.
 GetSnmpObjValue($host, $community, OID_DEFAULT);
 
+// Run the requested check
 switch($check) {
   case 'CPU':
     // Get CPU temperature
