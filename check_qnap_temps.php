@@ -18,7 +18,7 @@
 *
 * Return Example: 57 C/134 F
 *
-* USAGE: check_qnap_temps.php HOST COMMUNITY CHECK WARNING CRITICAL
+* USAGE: check_qnap_temps HOST COMMUNITY CHECK WARNING CRITICAL
 * HOST=IP or FQDN of the target QNAP device
 * COMMUNITY=SNMP community name
 * CHECK=Type of check to run: CPU, SYS, HDDS (all harddrives), or HDD# (specific drive, eg: HDD42)
