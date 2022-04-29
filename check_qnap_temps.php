@@ -1,22 +1,38 @@
 #!/usr/bin/php
 <?php
-/* check_qnap_temps.php
-* Check CPU and SYS temperature of QNAP storage devices.
+/* check_qnap_temps
+* https://github.com/kyle138/check_qnap_temps
 *
-* v0.1
+* Check CPU, SYS, and HDD temperatures of QNAP storage devices.
+*
+* v0.2
+* Updated to check HDD temps as well.
 *
 * The following OIDs are used:
+* Default system info: iso.3.6.1.2.1.1.1.0
 * CPU Temperature: iso.3.6.1.4.1.24681.1.2.5.0
 * SYS Temperature: iso.3.6.1.4.1.24681.1.2.6.0
+* Number of available HDD slots in the device: iso.3.6.1.4.1.24681.1.2.10.0
+* Root OID for HDD models installed: iso.3.6.1.4.1.24681.1.2.11.1.5
+* Root OID for HDD temperatures: iso.3.6.1.4.1.24681.1.2.11.1.3
+*
 * Return Example: 57 C/134 F
 *
-* USAGE: check_qnap_temps.php HOST COMMUNITY WARNING CRITICAL
+* USAGE: check_qnap_temps.php HOST COMMUNITY CHECK WARNING CRITICAL
 * HOST=IP or FQDN of the target QNAP device
 * COMMUNITY=SNMP community name
+* CHECK=Type of check to run: CPU, SYS, HDDS (all harddrives), or HDD# (specific drive, eg: HDD42)
 * WARNING=Temperature value to trigger warning
 * CRITICAL=Temperature value to trigger critical
-* EXAMPLE: check_qnap_temps.php 192.168.1.1 public CPU 80 100
 *
+* EXAMPLES:
+* check_qnap_temps 192.168.1.1 public CPU 80 100
+* check_qnap_temps 192.168.1.1 public SYS 50 60
+* check_qnap_temps 192.168.1.1 public HDDS 60 70
+* check_qnap_temps 192.168.1.1 public HDD5 60 70
+*
+* NOTES:
+* If you want to use the farenheit scale instead of celcius, define the SCALE constant as 'F' below.
 */
 
 // Constants
@@ -74,7 +90,7 @@ switch($check) {
     break;
   default:
     // This should never happen due to the previous check, but just in case.
-    DisplayMessage(0, "Invalid CHECK value: $check. Acceptable values are 'CPU' and 'SYS'.");
+    DisplayMessage(0, "Invalid CHECK value: $check. Acceptable values are CPU, SYS, HDDS, or HDD#.");
 }
 
 // Send value, check, warn, and crit and return the status.
