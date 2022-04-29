@@ -1,5 +1,5 @@
 # check_qnap_temps
-Nagios plugin for checking CPU temperature on QNAP devices via SNMP 
+Yet another Nagios plugin for checking CPU, SYS, and HDD temperatures on QNAP devices via SNMP 
 
 ## V0.2
 * Updated to check HDD temps.
@@ -27,7 +27,7 @@ Nagios plugin for checking CPU temperature on QNAP devices via SNMP
 * check_qnap_temps 192.168.1.1 public HDD5 60 70
 
 ## Return Example:
-OK - CPU Temp - 58 C/136 F 
+OK - CPU Temp - 58 C/136 F
 
 ## Notes:
 If you want to use the farenheit scale instead of celcius, define the SCALE constant as 'F' below.
