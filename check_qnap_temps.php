@@ -163,7 +163,7 @@ function CheckHDD($host, $community, $drivenum, $oid) {
     // No drive specified, check all drives and return maximum value.
     $ret = "-- C/-- F";
     $maxtemp =  0;
-    for($i = 0; $i <= $slots; $i++) {
+    for($i = 1; $i <= $slots; $i++) {
       $driveoid = OID_HDDTEMPS.".$i";
       $val = GetSnmpObjValue($host, $community, $driveoid);
       if($val !== "-- C/-- F" ) {
