@@ -94,17 +94,28 @@ function DisplayMessage($exitInt, $exitMsg) {
 
 // Connect and return object value.
 // If the host doesn't respond to simple SNMP query, exit.
-// If value begins with STRING: " strip that off and return temperature values.
+// If value begins with STRING: return temperature values within the quotes.
 function GetSnmpObjValue($host, $community, $oid) {
   $ret = @snmpget($host, $community, $oid);         // Returns 'STRING: "60 C/140 F"' for CPU and SYS temps.
   if( $ret === false )
     DisplayMessage(2, 'Cannot reach host: '.$host.', community: '.$community.', OID: '.$oid.'. Possibly offline, SNMP is not enabled, COMMUNITY string is invalid, or wrong OID for this device.');
 
-  if( strpos($ret,"\"") )
-    // Strip STRING: and just return the values.
-    $ret = explode("\"",$ret);
+  switch($ret) {
+    case(preg_match("/^STRING: /",$ret) ? true : false):
+      // Strip STRING: and just return the values.
+      $ret = explode("\"",$ret);
+      $ret = $ret[1];
+      break;
+    case(preg_match("/^INTEGER: /",$ret) ? true : false):
+      // Strip INTEGER: and just return the value.
+      $ret = explode(" ",$ret);
+      $ret = $ret[1];
+      break;
+    default:
+      DisplayMessage(0, "Unhandled type: $ret");
+  }
 
-  return $ret[1];
+  return $ret;
 } // GetSnmpObjValue()
 
 
@@ -135,6 +146,7 @@ function CheckHDD($host, $community, $drivenum, $oid) {
   if($drivenum > 0) {
     // Check if drivenum is valid
     $slots = GetSnmpObjValue($host, $community, OID_HDDSLOTS);
+    echo "slots: $slots \r\n";  //debug
     if($drivenum > $slots)
       DisplayMessage(0, "Invavlid drive specified. Drive Number ($drivenum) cannot be higher than $slots.");
     // Check if drive specified is installed
@@ -145,6 +157,7 @@ function CheckHDD($host, $community, $drivenum, $oid) {
 
     $driveoid = OID_HDDTEMPS.".$drivenum";
     $ret = GetSnmpObjValue($host, $community, $driveoid);
+    return($ret);
 
   }
 } // CheckHDD
