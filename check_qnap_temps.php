@@ -116,11 +116,11 @@ function GetSnmpObjValueTemperature($SnmpObjValue) {
 function RetStatus($value, $check, $warning, $critical) {
   $tempValue = GetSnmpObjValueTemperature($value);
   if($tempValue >= $critical)
-    DisplayMessage(2, "Critical - $check Temp - $value");
+    DisplayMessage(2, "Critical - $check Temp - $value | Temperature=$tempValue".SCALE.";$warning;$critical;0;140");
   elseif($tempValue >= $warning)
-    DisplayMessage(1, "Warning - $check Temp - $value");
+    DisplayMessage(1, "Warning - $check Temp - $value | Temperature=$tempValue".SCALE.";$warning;$critical;0;140");
   else {
-    DisplayMessage(0, "OK - $check Temp - $value");
+    DisplayMessage(0, "OK - $check Temp - $value | Temperature=$tempValue".SCALE.";$warning;$critical;0;140");
   }
 } // RetStatus
 
