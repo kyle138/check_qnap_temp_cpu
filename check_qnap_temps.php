@@ -67,7 +67,7 @@ switch($check) {
     // Get temperatures of all HDDs by setting DriveNum to 0
     $temperature = CheckHDD($host, $community, 0, OID_HDDTEMPS);
     break;
-  case preg_match("/^HDD\d+$/",$check):
+  case (preg_match("/^HDD\d+$/",$check) ? true : false):
     // Get temperature of specified HDD by DriveNum
     $drivenum = explode("HDD",$check);
     $temperature = CheckHDD($host, $community, $drivenum[1], OID_HDDTEMPS);
