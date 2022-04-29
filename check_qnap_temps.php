@@ -142,11 +142,11 @@ function GetSnmpObjValueTemperature($SnmpObjValue) {
 // CheckHDD($host, $community, 0, OID_HDDSLOTS, OID_HDDTEMPS);
 // Check all HDD temperatures or just a single HDD temperature
 function CheckHDD($host, $community, $drivenum, $oid) {
+  // Get the number of HDD slots available in the device.
+  $slots = GetSnmpObjValue($host, $community, OID_HDDSLOTS);
   // If drivenum is supplied check the temperature of the drive specified.
   if($drivenum > 0) {
     // Check if drivenum is valid
-    $slots = GetSnmpObjValue($host, $community, OID_HDDSLOTS);
-    echo "slots: $slots \r\n";  //debug
     if($drivenum > $slots)
       DisplayMessage(0, "Invavlid drive specified. Drive Number ($drivenum) cannot be higher than $slots.");
     // Check if drive specified is installed
@@ -154,11 +154,27 @@ function CheckHDD($host, $community, $drivenum, $oid) {
     $model = GetSnmpObjValue($host, $community, $driveoid);
     if($model === "--")
       DisplayMessage(0, "Invalid drive specified. The HDD slot $drivenum is not populated.");
-
+    // Drive is installed, retrieve the temperature value.
     $driveoid = OID_HDDTEMPS.".$drivenum";
     $ret = GetSnmpObjValue($host, $community, $driveoid);
-    return($ret);
 
+    return $ret;
+  } else {
+    // No drive specified, check all drives and return maximum value.
+    $ret = "-- C/-- F";
+    $maxtemp =  0;
+    for($i = 0; $i <= $slots; $i++) {
+      $driveoid = OID_HDDTEMPS.".$i";
+      $val = GetSnmpObjValue($host, $community, $driveoid);
+      if($val !== "-- C/-- F" ) {
+        $temp = GetSnmpObjValueTemperature($val);
+        if($temp > $maxtemp) {
+          $maxtemp = $temp;
+          $ret = $val;
+        }
+      }
+    }
+    return $ret;
   }
 } // CheckHDD
 
