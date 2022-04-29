@@ -13,12 +13,12 @@ Nagios plugin for checking CPU temperature on QNAP devices via SNMP
 * Root OID for HDD temperatures: iso.3.6.1.4.1.24681.1.2.11.1.3
 
 ## Usage:
-**COMMAND:** check_qnap_temps.php HOST COMMUNITY CHECK WARNING CRITICAL
-**HOST:** IP or FQDN of the target QNAP device
-**COMMUNITY:** SNMP community name
-**CHECK:** Type of check to run: CPU, SYS, HDDS (all harddrives), or HDD# (specific drive, eg: HDD42)
-**WARNING:** Temperature value to trigger warning
-**CRITICAL:** Temperature value to trigger critical
+**COMMAND:** check_qnap_temps.php HOST COMMUNITY CHECK WARNING CRITICAL  
+**HOST:** IP or FQDN of the target QNAP device  
+**COMMUNITY:** SNMP community name  
+**CHECK:** Type of check to run: CPU, SYS, HDDS (all harddrives), or HDD# (specific drive, eg: HDD42)  
+**WARNING:** Temperature value to trigger warning  
+**CRITICAL:** Temperature value to trigger critical  
 
 ## Examples:
 * check_qnap_temps 192.168.1.1 public CPU 80 100
