@@ -1,6 +1,9 @@
 # check_qnap_temps
 Yet another Nagios plugin for checking CPU, SYS, and HDD temperatures on QNAP devices via SNMP 
 
+Available on the [Nagios Exchange](https://exchange.nagios.org/) at the following link:  
+<https://exchange.nagios.org/directory/Plugins/Hardware/Storage-Systems/SAN-and-NAS/check_qnap_temps/details>
+
 ## V0.2
 * Updated to check HDD temps.
 
